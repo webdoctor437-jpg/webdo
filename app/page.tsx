@@ -5,7 +5,7 @@ import UploadForm from "@/components/UploadForm";
 import FooterCompany from "@/components/FooterCompany";
 import "./global.scss";
 
-// 🧠 Parse AI result into structured sections (줄바꿈 + 가독성 강화 버전)
+
 function parseAnalysisResult(text: string) {
   const sectionTitles = [
     "Website Identity",
