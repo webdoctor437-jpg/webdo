@@ -9,10 +9,9 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@sparticuz/chromium": "^141.0.0",
+    "@sparticuz/chromium": "^131.0.1",
     "next": "latest",
     "openai": "^6.3.0",
-    "puppeteer": "^24.24.0",
     "puppeteer-core": "^24.24.0",
     "react": "latest",
     "react-dom": "latest",
