@@ -32,7 +32,7 @@ async function captureScreenshot(url: string): Promise<string> {
       fullPage: false, // Capture only the first screen
     });
 
-    const base64 = screenshot.toString("base64");
+    const base64 = Buffer.from(screenshot).toString("base64");
     console.log("✅ Screenshot captured successfully");
 
     return `data:image/png;base64,${base64}`;
