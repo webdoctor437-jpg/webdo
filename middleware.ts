@@ -2,10 +2,12 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
+// middleware.ts
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
-  runtime: "nodejs", // ✅ Edge 대신 Node 환경에서 실행
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|api/).*)"], // ✅ /api/* 요청은 미들웨어 제외
+  runtime: "nodejs", // ✅ Node 런타임 강제
 };
+
 
 export function middleware(req: NextRequest) {
   const headers: Record<string, string> = {
