@@ -25,7 +25,7 @@ export default function UploadForm({ onResult }: UploadFormProps) {
     else if (mode === "url") formData.append("url", url);
 
     try {
-      const res = await fetch("/analyze", { method: "POST", body: formData });
+      const res = await fetch("/api/analyze", { method: "POST", body: formData });
       const data = await res.json();
       if (!res.ok || data.error) throw new Error(data.error || "Server error");
       
