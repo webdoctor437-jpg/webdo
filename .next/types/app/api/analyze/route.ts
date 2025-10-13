@@ -1,8 +1,8 @@
 // File: D:\webdo\app\api\analyze\route.ts
-import * as entry from '../../../../../app/api/analyze/route.js'
+import * as entry from '../../../../../app/analyze/route.js'
 import type { NextRequest } from 'next/server.js'
 
-type TEntry = typeof import('../../../../../app/api/analyze/route.js')
+type TEntry = typeof import('../../../../../app/analyze/route.js')
 
 type SegmentParams<T extends Object = any> = T extends Record<string, any>
   ? { [K in keyof T]: T[K] extends string ? string | string[] | undefined : never }
