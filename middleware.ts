@@ -2,6 +2,11 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
+export const config = {
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  runtime: "nodejs", // ✅ Edge 대신 Node 환경에서 실행
+};
+
 export function middleware(req: NextRequest) {
   const headers: Record<string, string> = {
     "X-Frame-Options": "DENY",
@@ -26,7 +31,3 @@ export function middleware(req: NextRequest) {
 
   return res;
 }
-
-export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
-};
