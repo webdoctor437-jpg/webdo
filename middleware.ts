@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export function middleware(req: NextRequest) {
-  const headers = new Headers({
+  const headers: Record<string, string> = {
     "X-Frame-Options": "DENY",
     "X-Content-Type-Options": "nosniff",
     "Referrer-Policy": "strict-origin-when-cross-origin",
@@ -17,9 +17,14 @@ export function middleware(req: NextRequest) {
       "connect-src 'self' https://api.openai.com https://*.your-api.com",
       "frame-ancestors 'none'",
     ].join("; "),
+  };
+
+  const res = NextResponse.next();
+  Object.entries(headers).forEach(([key, value]) => {
+    res.headers.set(key, value);
   });
 
-  return NextResponse.next({ headers });
+  return res;
 }
 
 export const config = {
