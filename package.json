@@ -1,0 +1,25 @@
+{
+  "name": "webdo",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "next": "latest",
+    "openai": "^6.3.0",
+    "puppeteer": "^24.24.0",
+    "react": "latest",
+    "react-dom": "latest",
+    "sanitize-html": "^2.17.0",
+    "sass": "^1.93.2"
+  },
+  "devDependencies": {
+    "@types/node": "24.7.1",
+    "@types/react": "19.2.2",
+    "typescript": "5.9.3"
+  }
+}
