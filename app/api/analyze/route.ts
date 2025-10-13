@@ -2,9 +2,19 @@ import { NextResponse } from "next/server";
 import OpenAI from "openai";
 import puppeteer from "puppeteer";
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+// Lazy initialization to avoid build-time errors
+let openaiClient: OpenAI | null = null;
+
+function getOpenAIClient() {
+  if (!openaiClient) {
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+      throw new Error("OPENAI_API_KEY environment variable is not set");
+    }
+    openaiClient = new OpenAI({ apiKey });
+  }
+  return openaiClient;
+}
 
 export const runtime = "nodejs";
 
@@ -92,6 +102,9 @@ export async function POST(req: Request) {
       );
     }
 
+    // Get OpenAI client (will throw error if API key is missing)
+    const openai = getOpenAIClient();
+
     // 🔍 WebDoctor AI Analysis
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
@@ -99,12 +112,12 @@ export async function POST(req: Request) {
         {
           role: "system",
           content: `
-You are WebDoctor — an AI UX/UI consultant that diagnoses and evaluates design quality.
+You are WebDoctor – an AI UX/UI consultant that diagnoses and evaluates design quality.
 Your goal is to analyze screenshots or website URLs as if performing a professional design review.
 
 Use expert-level reasoning and provide actionable feedback on how to improve user experience, clarity, and visual appeal.
 Focus on usability, visual hierarchy, color balance, typography legibility, and overall layout consistency.
-Your tone should be analytical, confident, and insightful — like a senior design strategist giving practical advice.
+Your tone should be analytical, confident, and insightful – like a senior design strategist giving practical advice.
           `,
         },
         {
@@ -135,7 +148,7 @@ Include the following sections:
 5. **Similar Websites**
    - Mention a few real-world websites or apps with similar design approaches
 
-6. **WebDoctor’s Design Prescription**
+6. **WebDoctor's Design Prescription**
    - Conclude with professional recommendations on how to enhance usability and brand perception
               `,
             },
@@ -163,7 +176,7 @@ Include the following sections:
 
     let errorMessage = "An error occurred during analysis.";
 
-    if (error.message?.includes("API key")) {
+    if (error.message?.includes("API key") || error.message?.includes("OPENAI_API_KEY")) {
       errorMessage = "The OpenAI API key is not configured.";
     } else if (error.message?.includes("quota")) {
       errorMessage = "The API quota has been exceeded.";
