@@ -1,9 +1,5 @@
-// next.config.js
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    appDir: true, // ✅ App Router 강제 활성화
-  },
   async headers() {
     return [
       {
