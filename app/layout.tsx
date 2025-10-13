@@ -8,18 +8,12 @@ export const metadata = {
   },
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }) {
   return (
     <html lang="ko">
-      {/* ✅ head를 꼭 넣어야 Next.js가 루트 페이지로 인식함 */}
       <head />
-      <body>
-        {children}
-      </body>
+      <body>{children}</body>
     </html>
   );
 }
+
