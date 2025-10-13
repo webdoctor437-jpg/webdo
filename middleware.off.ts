@@ -1,13 +1,12 @@
-// middleware.ts
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-// middleware.ts
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|api/).*)"], // ✅ /api/* 요청은 미들웨어 제외
-  runtime: "nodejs", // ✅ Node 런타임 강제
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|api/|analyze).*)", // analyze 경로 제외 추가
+  ],
+  runtime: "nodejs",
 };
-
 
 export function middleware(req: NextRequest) {
   const headers: Record<string, string> = {
@@ -21,7 +20,7 @@ export function middleware(req: NextRequest) {
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: https:",
       "font-src 'self' data:",
-      "connect-src 'self' https://api.openai.com https://*.your-api.com",
+      "connect-src 'self' https://api.openai.com https://*.vercel.app",
       "frame-ancestors 'none'",
     ].join("; "),
   };
