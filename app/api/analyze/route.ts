@@ -18,29 +18,33 @@ function getOpenAIClient() {
 }
 
 export const runtime = "nodejs";
+export const preferredRegion = "iad1"; // ✅ Vercel puppeteer 안정 region
 
-// 🖼 Capture website screenshot (Vercel-safe version)
+// 🖼 Capture website screenshot (Stable Vercel version)
 async function captureScreenshot(url: string): Promise<string> {
   let browser;
   try {
     console.log("🌐 Launching browser...");
+
     const executablePath = await chromium.executablePath();
 
     browser = await puppeteer.launch({
-      args: [...chromium.args, "--no-sandbox", "--disable-setuid-sandbox"],
-      defaultViewport: { width: 1280, height: 720 },
+      args: chromium.args,
+      defaultViewport: { width: 1920, height: 1080 },
       executablePath,
-      headless: true,
+      headless: chromium.headless !== undefined ? chromium.headless : true,
     });
 
     const page = await browser.newPage();
-    await page.setViewport({ width: 1280, height: 720 });
 
     console.log("📸 Loading page:", url);
     await page.goto(url, {
-      waitUntil: "domcontentloaded", // faster and safer than networkidle2
-      timeout: 20000,
+      waitUntil: "networkidle2", // ✅ 렌더링 완료 시점까지 대기
+      timeout: 40000, // ✅ 40초 여유
     });
+
+    // ✅ 렌더 안정화 (애니메이션/JS 로딩 등)
+    await new Promise((res) => setTimeout(res, 2000));
 
     const screenshot = await page.screenshot({
       type: "png",
@@ -82,7 +86,12 @@ export async function POST(req: Request) {
         console.log("🔗 Image URL detected:", url);
       } else {
         console.log("🌐 Capturing webpage screenshot:", url);
-        imageUrl = await captureScreenshot(url);
+        try {
+          imageUrl = await captureScreenshot(url);
+        } catch (err: any) {
+          console.warn("⚠️ Screenshot failed, fallback to text-only analysis:", err.message);
+          imageUrl = null; // ⚡ fallback 처리
+        }
       }
     }
 
@@ -111,26 +120,24 @@ export async function POST(req: Request) {
     // 🧠 OpenAI Analysis
     const openai = getOpenAIClient();
 
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        {
-          role: "system",
-          content: `
+    const messages: any[] = [
+      {
+        role: "system",
+        content: `
 You are WebDoctor – an AI UX/UI consultant that diagnoses and evaluates design quality.
 Your goal is to analyze screenshots or website URLs as if performing a professional design review.
 
 Use expert-level reasoning and provide actionable feedback on how to improve user experience, clarity, and visual appeal.
 Focus on usability, visual hierarchy, color balance, typography legibility, and overall layout consistency.
 Your tone should be analytical, confident, and insightful – like a senior design strategist giving practical advice.
-          `,
-        },
-        {
-          role: "user",
-          content: [
-            {
-              type: "text",
-              text: `
+        `,
+      },
+      {
+        role: "user",
+        content: [
+          {
+            type: "text",
+            text: `
 Please analyze this website or app design.
 
 Include the following sections:
@@ -155,15 +162,22 @@ Include the following sections:
 
 6. **WebDoctor's Design Prescription**
    - Conclude with professional recommendations on how to enhance usability and brand perception
-              `,
-            },
-            {
-              type: "image_url",
-              image_url: { url: imageUrl },
-            },
-          ],
-        },
-      ],
+            `,
+          },
+        ],
+      },
+    ];
+
+    if (imageUrl) {
+      messages[1].content.push({
+        type: "image_url",
+        image_url: { url: imageUrl },
+      });
+    }
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages,
       max_tokens: 1000,
     });
 
@@ -172,7 +186,6 @@ Include the following sections:
       "Unable to retrieve the analysis result.";
 
     console.log("✅ Analysis complete");
-
     return NextResponse.json({ result }, { status: 200 });
   } catch (error: any) {
     console.error("❌ API Error:", error);
