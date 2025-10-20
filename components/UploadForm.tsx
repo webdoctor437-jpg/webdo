@@ -15,8 +15,8 @@ export default function UploadForm({ onResult }: UploadFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (mode === "file" && !file) return alert("Please upload an image!");
-    if (mode === "url" && !url) return alert("Please enter a URL!");
+    if (mode === "file" && !file) return alert("이미지를 업로드해주세요!");
+    if (mode === "url" && !url) return alert("이미지 URL을 입력해주세요!");
 
     setLoading(true);
 
@@ -27,16 +27,16 @@ export default function UploadForm({ onResult }: UploadFormProps) {
     try {
       const res = await fetch("/api/analyze", { method: "POST", body: formData });
       const data = await res.json();
-      if (!res.ok || data.error) throw new Error(data.error || "Server error");
+      if (!res.ok || data.error) throw new Error(data.error || "서버 오류가 발생했습니다.");
       
-      // Pass result to parent component
+      // 결과를 상위 컴포넌트로 전달
       onResult(data.result, data.imageUrl);
       
-      // Reset form
+      // 폼 초기화
       setFile(null);
       setUrl("");
     } catch (err: any) {
-      onResult(`❌ Analysis failed: ${err.message}`);
+      onResult(`❌ 분석 실패: ${err.message}`);
     } finally {
       setLoading(false);
     }
@@ -45,7 +45,7 @@ export default function UploadForm({ onResult }: UploadFormProps) {
   return (
     <div className="page-container">
       <form onSubmit={handleSubmit} className="upload-box">
-        <h2 className="title">Diagnose Your Design</h2>
+        <h2 className="title">디자인 진단하기</h2>
 
         <div className="mode-buttons">
           <button
@@ -53,14 +53,14 @@ export default function UploadForm({ onResult }: UploadFormProps) {
             className={`mode-btn ${mode === "file" ? "active" : ""}`}
             onClick={() => setMode("file")}
           >
-            📁 Upload File
+            📁 파일 업로드
           </button>
           <button
             type="button"
             className={`mode-btn ${mode === "url" ? "active" : ""}`}
             onClick={() => setMode("url")}
           >
-            🔗 Enter Image URL
+            🔗 이미지 URL 입력
           </button>
         </div>
 
@@ -76,7 +76,7 @@ export default function UploadForm({ onResult }: UploadFormProps) {
         {mode === "url" && (
           <input
             type="url"
-            placeholder="https://example.com/image.png"
+            placeholder="https://예시사이트.com/image.png"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             className="input-field"
@@ -88,7 +88,7 @@ export default function UploadForm({ onResult }: UploadFormProps) {
           disabled={loading || (mode === "file" && !file) || (mode === "url" && !url)}
           className="submit-btn"
         >
-          {loading ? "Analyzing..." : "🔍 Start Analysis"}
+          {loading ? "분석 중..." : "🔍 분석 시작"}
         </button>
       </form>
     </div>

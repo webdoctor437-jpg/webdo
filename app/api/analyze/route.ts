@@ -3,14 +3,14 @@ import OpenAI from "openai";
 import puppeteer from "puppeteer-core";
 import chromium from "@sparticuz/chromium";
 
-// 🧩 Lazy initialization to avoid build-time errors
+// 🧩 초기화 (빌드 시점 오류 방지)
 let openaiClient: OpenAI | null = null;
 
 function getOpenAIClient() {
   if (!openaiClient) {
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
-      throw new Error("OPENAI_API_KEY environment variable is not set");
+      throw new Error("OPENAI_API_KEY 환경 변수가 설정되지 않았습니다.");
     }
     openaiClient = new OpenAI({ apiKey });
   }
@@ -18,13 +18,13 @@ function getOpenAIClient() {
 }
 
 export const runtime = "nodejs";
-export const preferredRegion = "iad1"; // ✅ Vercel puppeteer 안정 region
+export const preferredRegion = "iad1"; // ✅ Vercel puppeteer 안정 지역
 
-// 🖼 Capture website screenshot (Stable Vercel version)
+// 🖼 웹사이트 스크린샷 캡처
 async function captureScreenshot(url: string): Promise<string> {
   let browser;
   try {
-    console.log("🌐 Launching browser...");
+    console.log("🌐 브라우저 실행 중...");
 
     const executablePath = await chromium.executablePath();
 
@@ -37,13 +37,13 @@ async function captureScreenshot(url: string): Promise<string> {
 
     const page = await browser.newPage();
 
-    console.log("📸 Loading page:", url);
+    console.log("📸 페이지 로드 중:", url);
     await page.goto(url, {
-      waitUntil: "networkidle2", // ✅ 렌더링 완료 시점까지 대기
-      timeout: 40000, // ✅ 40초 여유
+      waitUntil: "networkidle2", // ✅ 렌더링 완료 대기
+      timeout: 40000,
     });
 
-    // ✅ 렌더 안정화 (애니메이션/JS 로딩 등)
+    // ✅ 애니메이션, JS 로딩 안정화 대기
     await new Promise((res) => setTimeout(res, 2000));
 
     const screenshot = await page.screenshot({
@@ -52,17 +52,17 @@ async function captureScreenshot(url: string): Promise<string> {
     });
 
     const base64 = Buffer.from(screenshot).toString("base64");
-    console.log("✅ Screenshot captured successfully");
+    console.log("✅ 스크린샷 캡처 성공");
     return `data:image/png;base64,${base64}`;
   } catch (err: any) {
-    console.error("❌ Screenshot capture failed:", err.message);
-    throw new Error("Screenshot capture failed: " + err.message);
+    console.error("❌ 스크린샷 캡처 실패:", err.message);
+    throw new Error("스크린샷 캡처 실패: " + err.message);
   } finally {
     if (browser) await browser.close();
   }
 }
 
-// 🧠 Main POST handler
+// 🧠 메인 POST 핸들러
 export async function POST(req: Request) {
   try {
     const formData = await req.formData();
@@ -71,11 +71,11 @@ export async function POST(req: Request) {
 
     let imageUrl: string | null = null;
 
-    // 🔗 URL Mode
+    // 🔗 URL 모드
     if (url) {
       if (!url.startsWith("http://") && !url.startsWith("https://")) {
         return NextResponse.json(
-          { error: "Invalid URL format. Must start with http:// or https://" },
+          { error: "잘못된 URL 형식입니다. http:// 또는 https:// 로 시작해야 합니다." },
           { status: 400 }
         );
       }
@@ -83,23 +83,23 @@ export async function POST(req: Request) {
       const isImageUrl = /\.(png|jpg|jpeg|gif|webp)$/i.test(url);
       if (isImageUrl) {
         imageUrl = url;
-        console.log("🔗 Image URL detected:", url);
+        console.log("🔗 이미지 URL 감지됨:", url);
       } else {
-        console.log("🌐 Capturing webpage screenshot:", url);
+        console.log("🌐 웹페이지 스크린샷 캡처 시도:", url);
         try {
           imageUrl = await captureScreenshot(url);
         } catch (err: any) {
-          console.warn("⚠️ Screenshot failed, fallback to text-only analysis:", err.message);
-          imageUrl = null; // ⚡ fallback 처리
+          console.warn("⚠️ 스크린샷 실패, 텍스트 분석으로 대체:", err.message);
+          imageUrl = null;
         }
       }
     }
 
-    // 📁 File Upload Mode
+    // 📁 파일 업로드 모드
     else if (file) {
       if (file.size > 5 * 1024 * 1024) {
         return NextResponse.json(
-          { error: "File size must be 5MB or less." },
+          { error: "파일 크기는 5MB 이하만 가능합니다." },
           { status: 400 }
         );
       }
@@ -109,27 +109,27 @@ export async function POST(req: Request) {
       const base64 = buffer.toString("base64");
       const mimeType = file.type || "image/jpeg";
       imageUrl = `data:${mimeType};base64,${base64}`;
-      console.log("📤 Uploaded image received successfully");
+      console.log("📤 업로드된 이미지 수신 완료");
     } else {
       return NextResponse.json(
-        { error: "An image file or a valid URL is required." },
+        { error: "이미지 파일 또는 유효한 URL이 필요합니다." },
         { status: 400 }
       );
     }
 
-    // 🧠 OpenAI Analysis
+    // 🧠 OpenAI 분석 요청
     const openai = getOpenAIClient();
 
     const messages: any[] = [
       {
         role: "system",
         content: `
-You are WebDoctor – an AI UX/UI consultant that diagnoses and evaluates design quality.
-Your goal is to analyze screenshots or website URLs as if performing a professional design review.
+당신은 "웹닥터(WebDoctor)"라는 AI UX/UI 컨설턴트입니다.
+당신의 역할은 웹사이트나 앱 디자인을 전문가의 시각으로 분석하고 평가하는 것입니다.
 
-Use expert-level reasoning and provide actionable feedback on how to improve user experience, clarity, and visual appeal.
-Focus on usability, visual hierarchy, color balance, typography legibility, and overall layout consistency.
-Your tone should be analytical, confident, and insightful – like a senior design strategist giving practical advice.
+사용자의 디자인을 전문적으로 진단하고, 개선할 수 있는 구체적이고 실질적인 UX/UI 피드백을 제공합니다.
+주요 평가 항목은 사용성, 시각적 위계, 색상 조화, 타이포그래피 가독성, 레이아웃 일관성입니다.
+전문적이고 자신감 있는 어조로, 실제 디자이너가 조언하는 느낌으로 설명해주세요.
         `,
       },
       {
@@ -138,30 +138,30 @@ Your tone should be analytical, confident, and insightful – like a senior desi
           {
             type: "text",
             text: `
-Please analyze this website or app design.
+다음 웹사이트 또는 앱 디자인을 분석해주세요.
 
-Include the following sections:
+다음 항목을 포함해 주세요:
 
-1. **Website Identity**
-   - What type of website/app this appears to be
-   - Its likely purpose and audience
+1. **웹사이트 정보**
+   - 어떤 종류의 사이트인지
+   - 예상 목적과 주요 사용자층
 
-2. **Strengths**
-   - What design elements are working well?
-   - What makes the experience user-friendly or visually appealing?
+2. **강점**
+   - 디자인적으로 잘 작동하는 요소
+   - 사용성 또는 시각적으로 좋은 점
 
-3. **Areas for Improvement**
-   - What specific UX/UI issues could be optimized?
-   - Provide improvement suggestions with clear reasoning
+3. **개선이 필요한 부분**
+   - 개선할 수 있는 UX/UI 요소
+   - 구체적인 이유와 개선 방향 제안
 
-4. **Visual & Layout Analysis**
-   - Discuss color balance, typography, spacing, and overall visual hierarchy
+4. **시각적 & 레이아웃 분석**
+   - 색상 조화, 타이포그래피, 여백, 시각적 위계 구조 평가
 
-5. **Similar Websites**
-   - Mention a few real-world websites or apps with similar design approaches
+5. **유사한 웹사이트**
+   - 비슷한 디자인 스타일을 가진 실제 웹사이트나 앱 예시
 
-6. **WebDoctor's Design Prescription**
-   - Conclude with professional recommendations on how to enhance usability and brand perception
+6. **웹닥터의 디자인 처방전**
+   - 전체적인 개선 방향과 브랜드 인식 향상을 위한 제안
             `,
           },
         ],
@@ -183,24 +183,24 @@ Include the following sections:
 
     const result =
       completion.choices?.[0]?.message?.content ||
-      "Unable to retrieve the analysis result.";
+      "분석 결과를 가져올 수 없습니다.";
 
-    console.log("✅ Analysis complete");
+    console.log("✅ 분석 완료");
     return NextResponse.json({ result }, { status: 200 });
   } catch (error: any) {
-    console.error("❌ API Error:", error);
+    console.error("❌ API 오류:", error);
 
-    let errorMessage = "An error occurred during analysis.";
+    let errorMessage = "분석 중 오류가 발생했습니다.";
     if (error?.message?.includes("API key")) {
-      errorMessage = "The OpenAI API key is not configured.";
+      errorMessage = "OpenAI API 키가 설정되지 않았습니다.";
     } else if (error?.message?.includes("quota")) {
-      errorMessage = "The API quota has been exceeded.";
+      errorMessage = "API 사용 한도를 초과했습니다.";
     } else if (error?.message?.includes("Invalid image")) {
-      errorMessage = "The provided URL is not a valid image.";
+      errorMessage = "제공된 URL이 유효한 이미지가 아닙니다.";
     } else if (error?.message?.includes("Screenshot capture failed")) {
-      errorMessage = "Failed to capture screenshot from the provided URL.";
+      errorMessage = "URL에서 스크린샷을 가져오지 못했습니다.";
     } else if (error?.message?.includes("Navigation timeout")) {
-      errorMessage = "Page load timeout. Please check the URL.";
+      errorMessage = "페이지 로드 시간이 초과되었습니다. URL을 확인해주세요.";
     }
 
     return NextResponse.json({ error: errorMessage }, { status: 500 });
